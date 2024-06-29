@@ -1,18 +1,20 @@
 import React, { createContext, ReactNode, useState } from "react";
+import CodeBlock from "../types/CodeBlock.ts";
 
 
 interface CodeBlockContextProps {
-    selectedCodeBlock: string | null;
-    setSelectedCodeBlock: (codeBlockId: string | null) => void;
+    selectedCodeBlock: CodeBlock | null;
+    setSelectedCodeBlock: (codeBlock: CodeBlock | null) => void;
 }
 
 const CodeBlockContext = createContext<CodeBlockContextProps>({
     selectedCodeBlock: null,
-    setSelectedCodeBlock: () => {},
+    setSelectedCodeBlock: () => {
+    },
 });
 
 export const CodeBlockProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [selectedCodeBlock, setSelectedCodeBlock] = useState<string | null>(null);
+    const [selectedCodeBlock, setSelectedCodeBlock] = useState<CodeBlock | null>(null);
 
     return (
         <CodeBlockContext.Provider value={{ selectedCodeBlock, setSelectedCodeBlock }}>
