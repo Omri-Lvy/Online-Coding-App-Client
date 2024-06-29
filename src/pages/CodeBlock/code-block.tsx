@@ -5,19 +5,21 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchData } from "../../utils/fetch.ts";
 import PageTitle from "../../components/ui/page-title.tsx";
 import CodeEditor from "./code-editor/code-editor.tsx";
+import { Role } from "../../types/Role.ts";
+import { isCodeMatching } from "../../utils/codeComparison.ts";
 
 const CodeBlock = () => {
     const { selectedCodeBlock, setSelectedCodeBlock } = useContext(CodeBlockContext);
     const codeBlock = selectedCodeBlock;
     const socket = useContext(SocketContext);
-    const [role, setRole] = useState<'mentor' | 'student' | 'watcher' | null>(null);
+    const [role, setRole] = useState<Role | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [isCodeMatched, setIsCodeMatched] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
         if (!codeBlock) {
-            console.log('fetching code block')
             const codeBlockTitle = location.pathname.split('/').pop();
             fetchData(`/code-blocks/title/${codeBlockTitle}`).then((data) => {
                 setSelectedCodeBlock(data);
@@ -34,7 +36,7 @@ const CodeBlock = () => {
         }
         socket.emit('joinCodeBlock', selectedCodeBlock?._id);
         socket.on('role', (role) => {
-            setRole(role);
+            setRole(Role[role as keyof typeof Role]);
             setIsConnected(true);
         });
 
@@ -55,6 +57,11 @@ const CodeBlock = () => {
 
     }, [codeBlock, selectedCodeBlock, selectedCodeBlock?._id, selectedCodeBlock?.title, setSelectedCodeBlock, socket]);
 
+    const changeCodeHandler = (code: string) => {
+        const isMatched = isCodeMatching(code, codeBlock?.solution);
+        setIsCodeMatched(isMatched);
+    }
+
     return (
         <div
             className="flex w-dvw h-dvh justify-start items-center py-12 md:py-24 flex-col gap-8 relative">
@@ -68,8 +75,8 @@ const CodeBlock = () => {
             </Link>
             </span>
             <PageTitle title={selectedCodeBlock?.title.replaceAll('-', ' ') || ''}/>
-            <div className="flex justify-center items-center flex-col gap-4">
-                <span className="text-lg font-semibold">
+            <div className="flex justify-center items-start flex-col gap-4 w-10/12">
+                <span className="text-lg font-semibold w-full text-center">
                     {
                         role === 'mentor' ? 'You are the mentor' :
                             role === 'student' ? 'You are the student' :
@@ -84,13 +91,22 @@ const CodeBlock = () => {
                     </p>
                 </div>
             </div>
-            <div className="w-full h-full flex flex-col justify-start items-center gap-2">
-                <div className="w-11/12">
-                    <span className={`${isConnected ? "text-green-600" : "text-red-600"}`}>
+            <div className="w-full md:w-10/12 h-full flex flex-col justify-start items-center gap-2">
+                <div
+                    className={`w-11/12 flex ${isCodeMatched ? "justify-between" : "justify-end"} flex-row items-center`}>
+                    {isCodeMatched && (
+                        <div
+                            className="text-white text-center text-3xl font-semibold flex justify-start items-center gap-3">Your
+                            code matches the
+                            solution! <span
+                                className="text-5xl">🥳</span>
+                        </div>
+                    )}
+                    <div className={`${isConnected ? "text-green-600" : "text-red-600"}`}>
                         {isConnected ? 'Connected' : 'Disconnected'}
-                    </span>
+                    </div>
                 </div>
-                <CodeEditor role={role} selectedCodeBlock={selectedCodeBlock}/>
+                <CodeEditor role={role} selectedCodeBlock={selectedCodeBlock} onChange={changeCodeHandler}/>
             </div>
         </div>
     );

@@ -6,26 +6,31 @@ import CodeBlock from "../../../types/CodeBlock.ts";
 import { javascript } from "@codemirror/lang-javascript";
 import "./code-editor.css"
 import cn from "../../../utils/cn.ts";
+import { Role } from "../../../types/Role.ts";
 
 interface CodeEditorProps {
-    role: 'mentor' | 'student' | 'watcher' | null;
+    role: Role | null;
     selectedCodeBlock: CodeBlock | null;
     className?: string;
+    onChange?: (value: string) => void;
 }
 
-const CodeEditor = ({ role, selectedCodeBlock, className }: CodeEditorProps) => {
+const CodeEditor = ({ role, selectedCodeBlock, className, onChange }: CodeEditorProps) => {
     const socket = useContext(SocketContext);
     const [code, setCode] = React.useState(selectedCodeBlock?.code || "// Write your code here");
 
     const handleChange = useCallback((value: string) => {
         if (role === 'student') {
             setCode(value);
+            if (onChange) {
+                onChange(value);
+            }
             if (selectedCodeBlock) {
                 socket.emit('codeChange', { codeBlockId: selectedCodeBlock._id, code: value });
             }
         }
 
-    }, [role, selectedCodeBlock, socket]);
+    }, [role, selectedCodeBlock, socket, onChange]);
 
     useEffect(() => {
         socket.on('codeUpdate', (data) => {
