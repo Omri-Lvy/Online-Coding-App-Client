@@ -36,13 +36,16 @@ const CodeEditor = ({ role, selectedCodeBlock, className, onChange }: CodeEditor
         socket.on('codeUpdate', (data) => {
             if (data.codeBlockId === selectedCodeBlock?._id) {
                 setCode(data.code);
+                if (onChange) {
+                    onChange(data.code);
+                }
             }
         });
 
         return () => {
             socket.off('codeUpdate');
         };
-    }, [selectedCodeBlock, socket]);
+    }, [onChange, selectedCodeBlock, socket]);
 
     useEffect(() => {
         if (selectedCodeBlock) {
